@@ -1,0 +1,199 @@
+<html>
+<head>
+  <title>A Mapbox map!</title>
+
+  <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
+  <script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js'></script>
+  <!-- Mapbox GL -->
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.css' rel='stylesheet' />
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.js'></script>
+
+  <style>
+    /*#features {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 300px;
+        overflow: auto;
+        background: rgba(255, 255, 255, 0.8);
+    }*/
+    #map{ height: 100% }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+  #<pre id='features'></pre>
+  <script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiY2VjZTE5IiwiYSI6ImNpaHBvNTBnZjA0NHZ0Nm00bGJoMDAxdDkifQ.Nj2-Tx6bRcpoliPuSqAGHw';
+
+  // initialize the map
+  var map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: 'mapbox://styles/mapbox/light-v9', //hosted style id
+    center: [-77.38, 39], // starting position
+    zoom: 12 // starting zoom
+  });
+
+  var major_line_layer = null;
+  var line_layer = null;
+  var goAjax = null;
+  var goAjax2 = null;
+  var zoneAjax = null;
+  var streets;
+  var gl;
+  var layers = [];
+  var layerGroup = null;
+  
+  var roads_data = null;
+  var zoom_grids={
+	"0":{"table": 'national_priority0',"cols":1,"rows":1, "layerid":"roads_p0"},
+	"1":{"table": 'national_priority1',"cols":8,"rows":4, "layerid":"roads_p1"},
+	"2":{"table": 'national_priority2',"cols":24,"rows":10, "layerid":"roads_p2"},
+	"3":{"table": 'national_priority3',"cols":50,"rows":20,"layerid":"roads_p3"},
+	"4":{"table": 'national_priority4',"cols":150,"rows":60,"layerid":"roads_p4"},
+	"5":{"table": 'national_all',"cols":450,"rows":180,"layerid":"roads_all"}
+  };
+  
+  function add_empty_layer(id){
+	var empty_json = {
+		  "type": "Feature",
+		  "geometry": {
+			"type": "Point",
+			"coordinates": [0, 0]
+		  },
+		  "properties": {
+			"name": "Empty"
+		  }
+		};
+	map.addLayer({
+		  "id":id,
+		  "type":"line",
+		  "source":{
+			"type":"geojson",
+			"data":empty_json
+		  },
+		  "layout": {
+				"line-join": "round",
+				"line-cap": "round"
+			},
+		  "paint": {
+				"line-color": "#777377",
+				"line-width": 1
+			  }
+			});
+  };
+  
+  function init_map(){
+		add_empty_layer("roads_p0");
+        add_empty_layer("roads_p1");
+		add_empty_layer("roads_p2");
+		add_empty_layer("roads_p3");
+		add_empty_layer("roads_p4");
+		add_empty_layer("roads_all");
+  };
+  
+  map.on('load', function(){
+	var data={
+            "xmin":map.getBounds()._sw.lng,
+            "ymin":map.getBounds()._sw.lat,
+            "xmax":map.getBounds()._ne.lng,
+            "ymax":map.getBounds()._ne.lat
+        };
+	  init_map();
+
+	
+  });
+  var test;
+  
+  function empty_map(){
+	var empty_json = {
+		  "type": "Feature",
+		  "geometry": {
+			"type": "Point",
+			"coordinates": [0, 0]
+		  },
+		  "properties": {
+			"name": "Empty"
+		  }
+		};
+	map.removeSource('roads_p0');
+	map.removeSource('roads_p1');
+	map.removeSource('roads_p2');
+	map.removeSource('roads_p3');
+	map.removeSource('roads_p4');
+	map.removeSource('roads_all');
+	
+	map.addSource('roads_p0', {"type":"geojson","data":empty_json});
+	map.addSource('roads_p1', {"type":"geojson","data":empty_json});
+	map.addSource('roads_p2', {"type":"geojson","data":empty_json});
+	map.addSource('roads_p3', {"type":"geojson","data":empty_json});
+	map.addSource('roads_p4', {"type":"geojson","data":empty_json});
+	map.addSource('roads_all', {"type":"geojson","data":empty_json});
+	
+  };
+  
+  function change_layer(layerid, roads_data){
+		map.getSource(layerid).setData(roads_data);
+  };
+  
+  function get_zoom_grid(){
+	var zoom = map.getZoom();
+	//if(zoom <=9) {return zoom_grids[0]};
+	if(zoom <=11) {return zoom_grids[1]};
+	if(zoom <=12) {return zoom_grids[2]};
+	if(zoom <=13) {return zoom_grids[3]};
+	if(zoom <=14) {return zoom_grids[4]};
+	return zoom_grids[5];
+  };
+  
+
+  
+  map.on('moveend',function(e){
+	if (map.getZoom()<=10) {
+		empty_map()
+		return;
+		};
+	var zoom_grid = get_zoom_grid();
+	
+	var data={
+            "xmin":map.getBounds()._sw.lng,
+            "ymin":map.getBounds()._sw.lat,
+            "xmax":map.getBounds()._ne.lng,
+            "ymax":map.getBounds()._ne.lat,
+			"table": zoom_grid.table,
+			"cols":zoom_grid.cols,
+			"rows":zoom_grid.rows
+        };
+	
+	url = "/refreshmap";
+	
+	if(goAjax !== null) {goAjax.abort(); goAjax=null;};
+	goAjax = $.ajax({url:url, type:'POST',data: data, dataType: 'json' });
+	$.when(goAjax).done(function(data){   
+      console.log('yeah');
+      
+	  if (roads_data !== null) roads_data=null;
+	  empty_map();
+	  change_layer(zoom_grid.layerid, data);
+    });
+  
+  });
+
+  map.on('click',function(){
+    var data={
+            "xmin":map.getBounds()._sw.lng,
+            "ymin":map.getBounds()._sw.lat,
+            "xmax":map.getBounds()._ne.lng,
+            "ymax":map.getBounds()._ne.lat
+        };
+    
+  });
+
+
+  
+
+  </script>
+</body>
+</html>
