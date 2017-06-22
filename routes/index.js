@@ -87,7 +87,7 @@ router.post('/refreshmap', function(req, res) {
 			+ "FROM ( SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features "
 			+ "FROM (SELECT 'Feature' As type "
 				+ ", ST_AsGeoJSON(lg.geom)::json As geometry "
-				+ ", row_to_json( (select l from (select link_id, a_id, b_id, func_class) as l))  As properties "
+				+ ", row_to_json( (select l from (select link_id, a_id, b_id, func_class, tollway) as l))  As properties "
 				+ "FROM tiles.render_vts_byextent($7::varchar, $5, $6, $1,$2,$3,$4) as lg) "
 					+ "As f )  As fc", [req.body.xmin, req.body.ymin, req.body.xmax, req.body.ymax, req.body.cols, req.body.rows, req.body.table]) ;
 		console.log(query.text);

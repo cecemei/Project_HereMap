@@ -9,20 +9,55 @@
   <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.js'></script>
 
   <style>
-    /*#features {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: 300px;
-        overflow: auto;
-        background: rgba(255, 255, 255, 0.8);
-    }*/
+    
     #map{ height: 100% }
   </style>
 </head>
 <body>
+<style>
+    #menu {
+        background: #fff;
+        position: absolute;
+        z-index: 1;
+        top: 10px;
+        right: 10px;
+        border-radius: 3px;
+        width: 120px;
+        border: 1px solid rgba(0,0,0,0.4);
+        font-family: 'Open Sans', sans-serif;
+    }
 
+    #menu a {
+        font-size: 13px;
+        color: #404040;
+        display: block;
+        margin: 0;
+        padding: 0;
+        padding: 10px;
+        text-decoration: none;
+        border-bottom: 1px solid rgba(0,0,0,0.25);
+        text-align: center;
+    }
+
+    #menu a:last-child {
+        border: none;
+    }
+
+    #menu a:hover {
+        background-color: #f8f8f8;
+        color: #404040;
+    }
+
+    #menu a.active {
+        background-color: #3887be;
+        color: #ffffff;
+    }
+
+    #menu a.active:hover {
+        background: #3074a4;
+    }
+</style>
+  <nav id="menu"></nav>
   <div id="map"></div>
   #<pre id='features'></pre>
   <script>
@@ -32,8 +67,8 @@
   var map = new mapboxgl.Map({
     container: 'map', // container id
     style: 'mapbox://styles/mapbox/light-v9', //hosted style id
-    center: [-77.38, 39], // starting position
-    zoom: 12 // starting zoom
+    center: [-122.30, 37.85], // starting position
+    zoom: 11 // starting zoom
   });
 
   var major_line_layer = null;
@@ -41,57 +76,54 @@
   var goAjax = null;
   var goAjax2 = null;
   var zoneAjax = null;
-  var streets;
+  var streets = 'roads_all';
   var gl;
   var layers = [];
   var layerGroup = null;
   
   var roads_data = null;
   var zoom_grids={
-	"0":{"table": 'national_priority0',"cols":1,"rows":1, "layerid":"roads_p0"},
-	"1":{"table": 'national_priority1',"cols":8,"rows":4, "layerid":"roads_p1"},
-	"2":{"table": 'national_priority2',"cols":24,"rows":10, "layerid":"roads_p2"},
-	"3":{"table": 'national_priority3',"cols":50,"rows":20,"layerid":"roads_p3"},
-	"4":{"table": 'national_priority4',"cols":150,"rows":60,"layerid":"roads_p4"},
-	"5":{"table": 'national_all',"cols":450,"rows":180,"layerid":"roads_all"}
+	//"0":{"table": 'national_priority0',"cols":1,"rows":1, "layerid":streets},
+	"1":{"table": 'national_priority1',"cols":8,"rows":4, "layerid":streets},
+	"2":{"table": 'national_priority2',"cols":24,"rows":10, "layerid":streets},
+	"3":{"table": 'national_priority3',"cols":50,"rows":20,"layerid":streets},
+	"4":{"table": 'national_priority4',"cols":150,"rows":60,"layerid":streets},
+	"5":{"table": 'national_all',"cols":450,"rows":180,"layerid":streets}
   };
   
-  function add_empty_layer(id){
-	var empty_json = {
+ 
+  var empty_json = {
 		  "type": "Feature",
 		  "geometry": {
 			"type": "Point",
 			"coordinates": [0, 0]
 		  },
 		  "properties": {
-			"name": "Empty"
+			"name": "Empty",
+			"func_class": 1	
 		  }
 		};
-	map.addLayer({
-		  "id":id,
-		  "type":"line",
-		  "source":{
+  function add_layer_styling(id){
+	map.addSource(id, {
 			"type":"geojson",
 			"data":empty_json
-		  },
-		  "layout": {
-				"line-join": "round",
-				"line-cap": "round"
-			},
-		  "paint": {
-				"line-color": "#777377",
-				"line-width": 1
-			  }
-			});
+		  });
+	map.addLayer({'id': 'func5', 'type':'line', 'source':id, paint:{"line-color":"SkyBlue", 'line-width':0.7}
+		,'filter':['all', ['==', 'func_class',5]]});
+	map.addLayer({'id': 'func4', 'type':'line', 'source':id, paint:{"line-color":"SkyBlue", 'line-width':1.5}
+		,'filter':['all', ['==', 'func_class',4]]});
+	map.addLayer({'id': 'func3', 'type':'line', 'source':id, paint:{"line-color":"DeepSkyBlue", 'line-width':3}
+		,'filter':['all', ['==', 'func_class',3]]});
+	map.addLayer({'id': "func2", 'type':'line', 'source':id, paint:{"line-color":"SlateBlue", 'line-width':5}
+		,'filter':['all', ['==', 'func_class',2]]});
+	map.addLayer({'id': "func1", 'type':'line', 'source':id, paint:{"line-color":"SlateBlue", 'line-width':5}
+		,'filter':['all', ['==', 'func_class',1]]});
+	map.addLayer({'id': "tollway", 'type':'line', 'source':id, paint:{"line-color":"Salmon", 'line-width':5}
+		,'filter':['all', ['==', 'tollway',1]]});
   };
   
   function init_map(){
-		add_empty_layer("roads_p0");
-        add_empty_layer("roads_p1");
-		add_empty_layer("roads_p2");
-		add_empty_layer("roads_p3");
-		add_empty_layer("roads_p4");
-		add_empty_layer("roads_all");
+		add_layer_styling(streets);
   };
   
   map.on('load', function(){
@@ -102,48 +134,16 @@
             "ymax":map.getBounds()._ne.lat
         };
 	  init_map();
-
+	  refreshmap();
 	
   });
-  var test;
-  
-  function empty_map(){
-	var empty_json = {
-		  "type": "Feature",
-		  "geometry": {
-			"type": "Point",
-			"coordinates": [0, 0]
-		  },
-		  "properties": {
-			"name": "Empty"
-		  }
-		};
-	map.removeSource('roads_p0');
-	map.removeSource('roads_p1');
-	map.removeSource('roads_p2');
-	map.removeSource('roads_p3');
-	map.removeSource('roads_p4');
-	map.removeSource('roads_all');
-	
-	map.addSource('roads_p0', {"type":"geojson","data":empty_json});
-	map.addSource('roads_p1', {"type":"geojson","data":empty_json});
-	map.addSource('roads_p2', {"type":"geojson","data":empty_json});
-	map.addSource('roads_p3', {"type":"geojson","data":empty_json});
-	map.addSource('roads_p4', {"type":"geojson","data":empty_json});
-	map.addSource('roads_all', {"type":"geojson","data":empty_json});
-	
-  };
-  
-  function change_layer(layerid, roads_data){
-		map.getSource(layerid).setData(roads_data);
-  };
   
   function get_zoom_grid(){
 	var zoom = map.getZoom();
 	//if(zoom <=9) {return zoom_grids[0]};
-	if(zoom <=11) {return zoom_grids[1]};
-	if(zoom <=12) {return zoom_grids[2]};
-	if(zoom <=13) {return zoom_grids[3]};
+	if(zoom <=10) {return zoom_grids[1]};
+	if(zoom <=11) {return zoom_grids[2]};
+	if(zoom <=12) {return zoom_grids[3]};
 	if(zoom <=14) {return zoom_grids[4]};
 	return zoom_grids[5];
   };
@@ -151,12 +151,16 @@
 
   
   map.on('moveend',function(e){
-	if (map.getZoom()<=10) {
-		empty_map()
+	refreshmap();
+  });
+  
+  function refreshmap()
+  {
+	if (map.getZoom()<=9) {
+		map.getSource(streets).setData(empty_json);
 		return;
 		};
 	var zoom_grid = get_zoom_grid();
-	
 	var data={
             "xmin":map.getBounds()._sw.lng,
             "ymin":map.getBounds()._sw.lat,
@@ -173,13 +177,12 @@
 	goAjax = $.ajax({url:url, type:'POST',data: data, dataType: 'json' });
 	$.when(goAjax).done(function(data){   
       console.log('yeah');
-      
+      console.log(data);
 	  if (roads_data !== null) roads_data=null;
-	  empty_map();
-	  change_layer(zoom_grid.layerid, data);
+	  map.getSource(streets).setData(data);
     });
   
-  });
+  };
 
   map.on('click',function(){
     var data={
@@ -191,6 +194,35 @@
     
   });
 
+  var toggleableLayerIds = ['func1','func2','func3','func4','func5', 'tollway' ];
+  
+  for (var i = 0; i < toggleableLayerIds.length; i++) {
+    var id = toggleableLayerIds[i];
+
+    var link = document.createElement('a');
+    link.href = '#';
+    link.className = 'active';
+    link.textContent = id;
+
+    link.onclick = function (e) {
+        var clickedLayer = this.textContent;
+        e.preventDefault();
+        e.stopPropagation();
+
+        var visibility = map.getLayoutProperty(clickedLayer, 'visibility');
+
+        if (visibility === 'visible') {
+            map.setLayoutProperty(clickedLayer, 'visibility', 'none');
+            this.className = '';
+        } else {
+            this.className = 'active';
+            map.setLayoutProperty(clickedLayer, 'visibility', 'visible');
+        }
+    };
+
+    var layers = document.getElementById('menu');
+    layers.appendChild(link);
+};
 
   
 
