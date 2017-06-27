@@ -269,7 +269,7 @@
       //console.log(features);
       //console.log(features.length);
 
-      if (features.length>0)
+      if (features.length>=0)
       {
         var completehtml=""
         var featurelist=[];
@@ -300,7 +300,8 @@
             document.getElementById("dataSaveEdit_"+j).onclick = function() {SaveData(features,this.id)};
 
           }
-          break;
+		  if(features.length>0){
+			break;}
         };    
     };
   });
