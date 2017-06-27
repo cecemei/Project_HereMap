@@ -240,12 +240,25 @@
     var bbox = [[e.point.x - 5, e.point.y - 5], [e.point.x + 5, e.point.y + 5]];
     
     var toggleableLayerIds = ['func1','func2','func3','func4','func5'];
-  
+	
+	var toll_features = map.queryRenderedFeatures(bbox, { layers: ['toll'] });
+	var toll_display="";
+	if (toll_features.length>0){
+	  for(var i = 0;i<toll_features.length;i++){
+		toll_display = toll_display + JSON.stringify(toll_features[i].properties,null,2) + "<br />";
+		}
+		new mapboxgl.Popup()
+		.setLngLat(e.lngLat)
+		.setHTML(toll_display)
+		.addTo(map);
+	};
+	
+	
+
     for (var i = 0; i < toggleableLayerIds.length; i++) {
       var layerid = toggleableLayerIds[i];
       var features = map.queryRenderedFeatures(bbox, { layers: [layerid] });
-
-
+      
 
       var filter = features.reduce(function(memo, feature) {
             memo.push(feature.properties.link_id);
@@ -315,7 +328,7 @@
     $.when(goAjax).done(function(data){
         //console.log(data.rows[0]['addtoll']);
         //var returnStatus;
-        if (data.rows[0]['addtoll']==0) {
+        if (data.rows[0]['addtoll']<=1) {
           console.log("Toll Updated Successfully!");
           document.getElementById("status"+j).innerHTML = "<font color='green'>   Updated Successfully!</font>";
           refreshtolls();

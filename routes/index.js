@@ -133,7 +133,7 @@ router.get('/refreshtolls', function(req, res) {
 			+ "FROM (SELECT 'Feature' As type "
 				+ ", ST_AsGeoJSON(lg.geom)::json As geometry "
 				+ ", row_to_json( (select l from (select a_id, b_id, link_id, toll) as l))  As properties "
-				+ "FROM tolls.national_tolls as lg) "
+				+ "FROM tolls.national_tolls as lg where toll>0) "
 					+ "As f )  As fc");
 
 		query.on("end", function (result) {
