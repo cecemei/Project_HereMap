@@ -124,6 +124,26 @@ router.post('/updatelink', function(req, res) {
 	}	
 });
 
+router.get('/refreshtolls', function(req, res) {
+	
+		var client = new pg.Client(conString);
+		client.connect();
+		var query = client.query("SELECT row_to_json(fc) "
+			+ "FROM ( SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features "
+			+ "FROM (SELECT 'Feature' As type "
+				+ ", ST_AsGeoJSON(lg.geom)::json As geometry "
+				+ ", row_to_json( (select l from (select a_id, b_id, link_id, toll) as l))  As properties "
+				+ "FROM tolls.national_tolls as lg) "
+					+ "As f )  As fc");
+
+		query.on("end", function (result) {
+			console.log(result.rows[0].row_to_json);
+			res.send(result.rows[0].row_to_json);
+			client.end();
+			res.end();
+		});
+		
+});
 
 module.exports = router;
 

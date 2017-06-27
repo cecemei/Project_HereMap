@@ -132,14 +132,24 @@
 		,'filter':['all', ['==', 'func_class',2]]});
 	map.addLayer({'id': "func1", 'type':'line', 'source':id, paint:{"line-color":"SlateBlue", 'line-width':5}
 		,'filter':['all', ['==', 'func_class',1]]});
-	map.addLayer({'id': "tollway", 'type':'line', 'source':id, paint:{"line-color":"Salmon", 'line-width':5}
+	map.addLayer({'id': "tollway", 'type':'line', 'source':id, paint:{"line-color":"Pink", 'line-width':3}
 		,'filter':['all', ['==', 'tollway',1]]});
   map.addLayer({'id': "highlighted", 'type':'line', 'source':id, paint:{"line-color":"Black", 'line-width':5}
     ,'filter':["in","link_id",""]});
   };
   
+  function add_toll_layer_styling(id){
+	map.addSource(id, {
+			"type":"geojson",
+			"data":empty_json
+		  });
+	map.addLayer({'id': "toll", 'type':'line', 'source':id, paint:{"line-color":"Indianred", 'line-width':3}});
+
+  };
+  
   function init_map(){
 		add_layer_styling(streets);
+		add_toll_layer_styling('coded_tolls')
   };
   
   map.on('load', function(){
@@ -151,7 +161,7 @@
         };
 	  init_map();
 	  refreshmap();
-	
+	  refreshtolls();
   });
   
   function get_zoom_grid(){
@@ -200,6 +210,26 @@
   
   };
 
+  function refreshtolls()
+  {
+	var data={
+            "xmin":map.getBounds()._sw.lng,
+            "ymin":map.getBounds()._sw.lat,
+            "xmax":map.getBounds()._ne.lng,
+            "ymax":map.getBounds()._ne.lat,
+        };
+	url = "/refreshtolls";
+	
+	if(goAjax !== null) {goAjax.abort(); goAjax=null;};
+	goAjax = $.ajax({url:url, type:'GET',data: data, dataType: 'json' });
+	$.when(goAjax).done(function(data){   
+      console.log('yeah');
+      //console.log(data);
+	  map.getSource('coded_tolls').setData(data);
+    });
+  
+  };
+  
   map.on('click',function(e){
     var data={
             "xmin":map.getBounds()._sw.lng,
@@ -288,7 +318,8 @@
         if (data.rows[0]['addtoll']==0) {
           console.log("Toll Updated Successfully!");
           document.getElementById("status"+j).innerHTML = "<font color='green'>   Updated Successfully!</font>";
-        } else{
+          refreshtolls();
+		} else{
           console.log("Error!");
           document.getElementById("status"+j).innerHTML = "<font color='red'>    Errors!</font>";
 
