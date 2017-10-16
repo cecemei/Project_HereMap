@@ -16,8 +16,8 @@
     "leaflet": "^1.0.3",
     "leaflet-tilelayer-geojson": "^1.0.4",
     "morgan": "~1.8.1",
-    "pg": "*",
-    "postgeo": "*",
+    "pg": "~6.2.2",
+    "postgeo": "~0.1.2",
     "rbush": "^2.0.1",
     "serve-favicon": "~2.4.2"
   }
