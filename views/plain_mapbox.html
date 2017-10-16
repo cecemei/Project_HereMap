@@ -1,6 +1,6 @@
 <html>
 <head>
-  <title>Coding the tolls!</title>
+  <title>&#9889;Coding the tolls!&#9889;</title>
 
   <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
   <script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js'></script>
@@ -252,7 +252,7 @@
       //console.log(data);
 	  if (roads_data !== null) roads_data=null;
 	  map.getSource(streets).setData(data);
-      document.getElementById('counter').innerHTML="displaying features: "+data.features.length;
+      document.getElementById('counter').innerHTML="displaying features: "+data.features.length+" |zoom: "+Math.round(map.getZoom());
     });
   
   };
