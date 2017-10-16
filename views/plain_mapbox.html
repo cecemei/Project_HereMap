@@ -72,9 +72,12 @@
     }
 </style>
   <nav id="menu"></nav>
-  <div id="header" style="z-index:1; position: absolute; top: 15px; left: 15px; bottom: 0; height: 25px; background: rgba(255, 255, 255, 0.9);">
-	<p><label ></label></p>
-  </div>
+    <div id ="counter" style="z-index:1; position: absolute; bottom: 45px; left: 15px;  height: 25px; background: rgba(255, 255, 255, 0.9);">
+    </div>
+      <div id="header" style="z-index:1; position: absolute; top: 15px; left: 15px; bottom: 0; height: 25px; background: rgba(255, 255, 255, 0.9);">
+	
+      </div>
+    </div>
   <div id="map"></div>
   <pre id='features'></pre>
   <script>
@@ -240,14 +243,16 @@
         };
 	
 	url = "/refreshmap";
-	
+	document.getElementById('counter').innerHTML="refreshing......";
 	if(goAjax !== null) {goAjax.abort(); goAjax=null;};
 	goAjax = $.ajax({url:url, type:'POST',data: data, dataType: 'json' });
 	$.when(goAjax).done(function(data){   
       console.log('yeah');
+      
       //console.log(data);
 	  if (roads_data !== null) roads_data=null;
 	  map.getSource(streets).setData(data);
+      document.getElementById('counter').innerHTML="displaying features: "+data.features.length;
     });
   
   };
