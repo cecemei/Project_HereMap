@@ -1,8 +1,7 @@
 var express = require('express');
-//var async = require('async');
+
 var router = express.Router();
 
-// psql package import
 var pg = require("pg");
  
 
@@ -113,7 +112,7 @@ router.post('/updatelink', function(req, res) {
 
 		var client = new pg.Client(conString);
 		client.connect();
-		var query = client.query("select tolls.addtoll($1,$2, $3)", [req.body.aid, req.body.bid, req.body.toll]) ;
+		var query = client.query("select tolls.addtoll($1,$2, $3, $4)", [req.body.aid, req.body.bid, req.body.toll, req.body.username]) ;
 
 		query.on("end", function (result) {
 			console.log(result.rows[0]['addtoll']);
@@ -144,6 +143,49 @@ router.get('/refreshtolls', function(req, res) {
 		});
 		
 });
+
+router.get('/tollstructure', function(req, res) {
+	
+		var client = new pg.Client(conString);
+		client.connect();
+		var query = client.query("SELECT row_to_json(fc) "
+			+ "FROM ( SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features "
+			+ "FROM (SELECT 'Feature' As type "
+				+ ", ST_AsGeoJSON(lg.geom)::json As geometry "
+				+ ", row_to_json( (select l from (select a_id, b_id, link_id) as l))  As properties "
+				+ "FROM model._geopath_national_toll_structure as lg) "
+					+ "As f )  As fc");
+
+		query.on("end", function (result) {
+			console.log(result.rows[0].row_to_json);
+			res.send(result.rows[0].row_to_json);
+			client.end();
+			res.end();
+		});
+		
+});
+
+router.get('/tollway', function(req, res) {
+	
+		var client = new pg.Client(conString);
+		client.connect();
+		var query = client.query("SELECT row_to_json(fc) "
+			+ "FROM ( SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features "
+			+ "FROM (SELECT 'Feature' As type "
+				+ ", ST_AsGeoJSON(lg.geom)::json As geometry "
+				+ ", row_to_json( (select l from (select a_id, b_id, link_id) as l))  As properties "
+				+ "FROM model._geopath_national_tollway as lg) "
+					+ "As f )  As fc");
+
+		query.on("end", function (result) {
+			console.log(result.rows[0].row_to_json);
+			res.send(result.rows[0].row_to_json);
+			client.end();
+			res.end();
+		});
+		
+});
+
 
 module.exports = router;
 

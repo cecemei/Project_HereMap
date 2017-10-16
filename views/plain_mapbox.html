@@ -1,6 +1,6 @@
 <html>
 <head>
-  <title>A Mapbox map!</title>
+  <title>Coding the tolls!</title>
 
   <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
   <script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js'></script>
@@ -72,19 +72,26 @@
     }
 </style>
   <nav id="menu"></nav>
+  <div id="header" style="z-index:1; position: absolute; top: 15px; left: 15px; bottom: 0; height: 25px; background: rgba(255, 255, 255, 0.9);">
+	<p><label ></label></p>
+  </div>
   <div id="map"></div>
-  #<pre id='features'></pre>
+  <pre id='features'></pre>
   <script>
   mapboxgl.accessToken = 'pk.eyJ1IjoiY2VjZTE5IiwiYSI6ImNpaHBvNTBnZjA0NHZ0Nm00bGJoMDAxdDkifQ.Nj2-Tx6bRcpoliPuSqAGHw';
 
   // initialize the map
   var map = new mapboxgl.Map({
     container: 'map', // container id
-    style: 'mapbox://styles/mapbox/light-v9', //hosted style id
+    //style: 'mapbox://styles/mapbox/light-v9', //hosted style id
+    //style: 'mapbox://styles/cece19/cj8c2dcmi11t12spb61tzlmef',
+    style: 'mapbox://styles/mapbox/dark-v9', 
     center: [-122.30, 37.85], // starting position
     zoom: 11 // starting zoom
   });
-
+  
+  checkCookie();
+  
   var major_line_layer = null;
   var line_layer = null;
   var goAjax = null;
@@ -123,19 +130,19 @@
 			"data":empty_json
 		  });
 	map.addLayer({'id': 'func5', 'type':'line', 'source':id, paint:{"line-color":"SkyBlue", 'line-width':0.7}
-		,'filter':['all', ['==', 'func_class',5]]});
+		,'filter':['all', ['==', 'func_class',5]], 'layout': {"line-join": "round", "line-cap": "round", 'visibility': 'visible'}});
 	map.addLayer({'id': 'func4', 'type':'line', 'source':id, paint:{"line-color":"SkyBlue", 'line-width':1.5}
-		,'filter':['all', ['==', 'func_class',4]]});
+		,'filter':['all', ['==', 'func_class',4]],'layout': {"line-join": "round", "line-cap": "round", 'visibility': 'visible'}});
 	map.addLayer({'id': 'func3', 'type':'line', 'source':id, paint:{"line-color":"DeepSkyBlue", 'line-width':3}
-		,'filter':['all', ['==', 'func_class',3]]});
-	map.addLayer({'id': "func2", 'type':'line', 'source':id, paint:{"line-color":"SlateBlue", 'line-width':5}
-		,'filter':['all', ['==', 'func_class',2]]});
+		,'filter':['all', ['==', 'func_class',3]],'layout': {"line-join": "round", "line-cap": "round", 'visibility': 'visible'}});
+	map.addLayer({'id': "func2", 'type':'line', 'source':id, paint:{"line-color":"SlateBlue", 'line-width':3}
+		,'filter':['all', ['==', 'func_class',2]],'layout': {"line-join": "round", "line-cap": "round", 'visibility': 'visible'}});
 	map.addLayer({'id': "func1", 'type':'line', 'source':id, paint:{"line-color":"SlateBlue", 'line-width':5}
-		,'filter':['all', ['==', 'func_class',1]]});
-	map.addLayer({'id': "tollway", 'type':'line', 'source':id, paint:{"line-color":"Pink", 'line-width':3}
-		,'filter':['all', ['==', 'tollway',1]]});
+		,'filter':['all', ['==', 'func_class',1]],'layout': {"line-join": "round", "line-cap": "round", 'visibility': 'visible'}});
+	//map.addLayer({'id': "tollway", 'type':'line', 'source':id, paint:{"line-color":"Pink", 'line-width':3}
+		//,'filter':['all', ['==', 'tollway',1]]});
   map.addLayer({'id': "highlighted", 'type':'line', 'source':id, paint:{"line-color":"Black", 'line-width':5}
-    ,'filter':["in","link_id",""]});
+    ,'filter':["in","link_id",""],'layout': {"line-join": "round", "line-cap": "round", 'visibility': 'visible'}});
   };
   
   function add_toll_layer_styling(id){
@@ -143,13 +150,48 @@
 			"type":"geojson",
 			"data":empty_json
 		  });
-	map.addLayer({'id': "toll", 'type':'line', 'source':id, paint:{"line-color":"Indianred", 'line-width':3}});
+	map.addLayer({'id': "toll", 'type':'line', 'source':id, paint:{"line-color":"Indianred", 'line-width':3},
+    'layout': {"line-join": "round", "line-cap": "round", 'visibility': 'visible'}});
 
+  };
+  
+  function add_toll_structure(){
+    var id = 'tollstructure';
+    map.addSource(id, {
+			"type":"geojson",
+			"data":empty_json
+		  });
+	url = "/tollstructure";
+	tollAjax = $.ajax({url:url, type:'GET', dataType: 'json' });
+	$.when(tollAjax).done(function(data){   
+      //console.log('yeah');
+      //console.log(data);
+	  map.getSource(id).setData(data);
+    });
+	map.addLayer({'id': id, 'type':'symbol', 'source':id, "layout": {"icon-image": "police-15"}});
+  };
+  
+  function add_toll_way(){
+    var id = 'tollway';
+    map.addSource(id, {
+			"type":"geojson",
+			"data":empty_json
+		  });
+	url = "/tollway";
+	tollAjax = $.ajax({url:url, type:'GET', dataType: 'json' });
+	$.when(tollAjax).done(function(data){   
+      //console.log('yeah');
+      //console.log(data);
+	  map.getSource(id).setData(data);
+    });
+	map.addLayer({'id': id, 'type':'line', 'source':id, paint:{"line-color":"Pink", 'line-width':3}, 'layout': {"line-join": "round", "line-cap": "round", 'visibility': 'visible'}});
   };
   
   function init_map(){
 		add_layer_styling(streets);
-		add_toll_layer_styling('coded_tolls')
+		add_toll_way();
+		add_toll_structure();
+		add_toll_layer_styling('coded_tolls');
   };
   
   map.on('load', function(){
@@ -182,10 +224,10 @@
   
   function refreshmap()
   {
-	if (map.getZoom()<=9) {
+	/*if (map.getZoom()<=14) {
 		map.getSource(streets).setData(empty_json);
 		return;
-		};
+		};*/
 	var zoom_grid = get_zoom_grid();
 	var data={
             "xmin":map.getBounds()._sw.lng,
@@ -223,7 +265,7 @@
 	if(goAjax !== null) {goAjax.abort(); goAjax=null;};
 	goAjax = $.ajax({url:url, type:'GET',data: data, dataType: 'json' });
 	$.when(goAjax).done(function(data){   
-      console.log('yeah');
+      //console.log('yeah');
       //console.log(data);
 	  map.getSource('coded_tolls').setData(data);
     });
@@ -305,6 +347,44 @@
         };    
     };
   });
+  
+  function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+  };
+
+  function checkCookie() {
+  	var username = getCookie("username");
+  	if (username != "") {
+  		//alert("Welcome again " + username);
+		document.getElementById('header').innerHTML ="Current user: " + username + " - " +"<button onclick='updateUsername()'>Change User</button>";
+  	} else {
+		askForUsername()
+  	}
+  }
+  
+  function updateUsername() {
+	askForUsername();
+	checkCookie();
+  }
+  
+  function askForUsername() {
+    username = prompt("Please enter your name:", "");
+  	if (username != "" && username != null) {
+  		document.cookie = "username=" + username;
+  	}
+  }
 
   function SaveData(features,id){  
 
@@ -314,13 +394,19 @@
 
     feature=features[j]
     var toll= document.getElementById("tollid"+j).value; 
-    //console.log(toll);
+	//Setting toll to zero if null to prevent error
+	if(toll == "")
+	{
+		toll = 0;
+	}
+    console.log(toll);
     var aid=feature.properties.a_id;
     var bid=feature.properties.b_id;
     var data={
       "aid":aid,
       "bid":bid,
-      "toll":toll
+      "toll":toll,
+	  "username":getCookie("username")
     };
 
     var url = "/updatelink";
