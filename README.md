@@ -1,6 +1,6 @@
-# Host a geo server to render 60+ million features #
+# Host a geo server to render over 60 million features #
 * Mapbox GL JS
 * PostGIS
-* Generate your own vector Tiles
-* Visualize 60+ million road segments
+* Generate your own Vector Tiles
+* Visualize over 60 million road segments
 ![Alt text](tollapp-demo.gif "demo")
