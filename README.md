@@ -1,4 +1,4 @@
-# Host a geo server to render over 60 million features #
+# Host a geo server to render over 50 million features #
 * Mapbox GL JS
 * PostGIS
 * Generate your own Vector Tiles
